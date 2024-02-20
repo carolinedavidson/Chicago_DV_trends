@@ -1,3 +1,7 @@
 
 **/.DS_Store
 Chi_DV_venv/
+Data/shapefiles/community area boundaries/
+Data/shapefiles/police district boundaries/
+Data/yearly reported crime/*.csv
+Data/iucr_codes.csv
