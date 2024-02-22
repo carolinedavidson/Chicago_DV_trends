@@ -267,7 +267,7 @@ def aggregate_data_by_area_period(df, base_df, geographic_agg_level="community_a
     return df_agg_full
 
 
-def gen_full_df(base_df, area="community_area", yearly = False, start = 2001, end = 2023):
+def gen_full_df(base_df, area="community_area", start = 2001, end = 2023):
     """
     Generate dataframe of crime counts by type, area, period.
     
@@ -278,8 +278,6 @@ def gen_full_df(base_df, area="community_area", yearly = False, start = 2001, en
     gen_base_df_all_combos()
     area -- name of variable to use for geographic aggregation 
     (default is community areas, other option is police districts)
-    yearly -- if True, aggregate data to year instead of month
-    (default is False, monthly aggregation)
     start -- first year of crime data to use (default is 2001)
     end -- last year of crime data to use (default is 2023)
     
@@ -303,12 +301,7 @@ def gen_full_df(base_df, area="community_area", yearly = False, start = 2001, en
             df_agg = aggregate_data_by_area_period(df_geo, 
                                                    base_df,
                                                    geographic_agg_level="district")
-        if yearly == True:
-            df_agg = df_agg.groupby(
-                ["reg_crime_group", area, "year"]
-                )["n_reported"].sum().reset_index()
-        df_agg.head()
-        df_agg.tail()
+   
         yearly_dfs[f"data_{year}"] = df_agg
         
     full_df = pd.concat(yearly_dfs.values(), ignore_index=True)
@@ -331,13 +324,20 @@ police_districts = unzip_load_shapefile("Police_District_Boundary_View-shp.zip",
 crime_month_comm_area_combos = gen_base_df_all_combos()  
 crime_month_district_combos = gen_base_df_all_combos(areas="district")
 
+# create community area level dataframes
 full_df = gen_full_df(base_df=crime_month_comm_area_combos)
-full_df_yearly = gen_full_df(base_df=crime_month_comm_area_combos, yearly=True)
+full_df_annual = full_df.groupby(["reg_crime_group", 
+                                  "community_area", 
+                                  "year"])["n_reported"].sum().reset_index()
+
+# create police district area level dataframes
 full_df_district = gen_full_df(base_df=crime_month_district_combos, area="district")
-full_df_district_yearly = gen_full_df(base_df=crime_month_district_combos, area="district", yearly=True)
+full_df_district_annual = full_df_district.groupby(["reg_crime_group",
+                                                    "district",
+                                                    "year"])["n_reported"].sum().reset_index()
 
 # save to csv for analysis in R
 full_df.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "monthly_comm_area_2001_2023.csv"))
-full_df_yearly.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "yearly_comm_area_2001_2023.csv"))
+full_df_annual.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "annual_comm_area_2001_2023.csv"))
 full_df_district.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "monthly_district_2001_2023.csv"))
-full_df_district_yearly.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "yearly_district_2001_2023.csv"))
+full_df_district_annual.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "annual_district_2001_2023.csv"))
