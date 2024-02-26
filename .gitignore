@@ -5,3 +5,6 @@ Data/shapefiles/community area boundaries/
 Data/shapefiles/police district boundaries/
 Data/yearly reported crime/*.csv
 Data/iucr_codes.csv
+.Rhistory
+images/temp/comm_areas_coefficients_plot.png
+images/temp/districts_coefficients_plot.png
