@@ -28,7 +28,7 @@ library(gtsummary)
 library(magick)
 library(gridExtra)
 
-ggplot2::theme_set(ggplot2::theme_minimal(base_size = 16))
+#ggplot2::theme_set(ggplot2::theme_minimal(base_size = 16))
 
 knitr::opts_chunk$set(
   fig.width = 8, 
@@ -149,26 +149,25 @@ crime_counts_graph <- ggplot(filter(city_monthly),
     labels = label_comma()
     ) +
   guides(color = guide_legend(title = "Crime Type")) +
-  theme_minimal() +
   theme(
     legend.position = "bottom",
-    legend.title = element_blank()
-    ) +
-  theme(
+    legend.title = element_blank(),
     axis.title.y = element_text(margin = margin(r = 10)),
-    plot.title = element_text(hjust = 0.5, vjust = 1.5, face = "bold", color = "#24074f")
+    plot.title = element_text(hjust = 0.5, vjust = 1.5, face = "bold", color = "#24074f"),
+    plot.background = element_rect(fill = "white",
+                                  color ="white")
     ) +
   annotate(
     geom = "text",
     x = as.Date("2020-03-13"), y = 13500,
     label = "March 13, 2020", hjust = 1.05
     ) + 
-    annotate(
-      geom = "text",
-      x = as.Date("2020-03-13"), y = 12500,
-      label = "Gov. closes IL schools", 
-      hjust = 1.05, color = "#434047"
-      ) 
+  annotate(
+    geom = "text",      
+    x = as.Date("2020-03-13"), y = 12500,
+    label = "Gov. closes IL schools", 
+    hjust = 1.05, color = "#434047"
+    ) 
 
 crime_counts_graph
 
@@ -180,27 +179,46 @@ We can see from this graph that all 3 types of crimes have clear annual cycles a
 ```{r percent changes graph}
 #| warning: false
 
-percent_changes_by_type_graph <- ggplot(city_monthly, aes(x = as.Date(date), y = perc_change/100, color = reg_crime_group)) + 
+percent_changes_by_type_graph <- ggplot(city_monthly, aes(
+  x = as.Date(date), 
+  y = perc_change/100, 
+  color = reg_crime_group)
+  ) + 
   geom_hline(aes(yintercept = 0), color = "gray80") +
   geom_line() +
-  facet_wrap(vars(reg_crime_group), ncol = 1,
-             labeller = labeller(reg_crime_group = crime_type_labels)) +
+  geom_vline(xintercept = as.Date("2020-03-13"), linetype = "dashed") +
+  facet_wrap(
+    vars(reg_crime_group), ncol = 1,
+    labeller = labeller(reg_crime_group = crime_type_labels)
+    ) +
   scale_color_manual(values = graph_colors) +
-  labs(title = "Monthly % Changes in Reported Crimes by Type, Chicago",
-       x = NULL,
-       y = "Percentage Change in Reported Crimes") + 
+  labs(
+    title = "Monthly % Changes in Reported Crimes by Type, Chicago",
+    x = NULL,
+    y = "Percentage Change in Reported Crimes"
+    ) + 
   theme(legend.position = "none") +
-  theme(axis.title.y = element_text(margin = margin(r = 20)),
-        axis.title.x = element_text(margin = margin(t = 10)),
-        axis.text.x = element_text(size = 8, angle = 45),
-        axis.text.y = element_text(size = 8),
-        panel.grid.major.x = element_line(color = "gray80"),  
-        panel.grid.minor.x = element_blank()
-        ) +
-  scale_x_date(breaks = seq(as.Date("2001-01-01"), as.Date("2024-01-01"), by = "1 year"), 
-               date_labels = "%Y",
-               limits = c(as.Date("2001-01-01"), as.Date("2024-01-01"))) + 
-  scale_y_continuous(labels = percent) 
+  theme(
+    axis.title.y = element_text(margin = margin(r = 20)),
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.text.x = element_text(size = 8, angle = 45),
+    axis.text.y = element_text(size = 8),
+    panel.grid.major.x = element_line(color = "gray80"),  
+    panel.grid.minor.x = element_blank(),
+    plot.background = element_rect(fill = "white",
+                                  color ="white")
+    ) +
+  scale_x_date(
+    breaks = seq(as.Date("2001-01-01"), as.Date("2024-01-01"), by = "1 year"), 
+    date_labels = "%Y",
+    limits = c(as.Date("2001-01-01"), as.Date("2024-01-01"))
+    ) + 
+  scale_y_continuous(labels = percent) +
+    annotate(
+    geom = "text",
+    x = as.Date("2020-03-13"), y = 0.5,
+    label = "Covid-19", hjust = -0.1, size = 3
+    ) 
 
 percent_changes_by_type_graph
 
@@ -267,10 +285,12 @@ All coefficients are statistically significant at the 1% level except for the co
 
 ```{r reg table as png}
 # differently formatted regression output table to save as image
-comm_areas_table <- tbl_regression(reg_comm_areas) %>%
+comm_areas_table <- tbl_regression(reg_comm_areas,
+                                   estimate_fun = function(x) style_number(x, digits = 3)) %>%
   add_significance_stars()
 
-districts_table <- tbl_regression(reg_districts) %>%
+districts_table <- tbl_regression(reg_districts,
+                                  estimate_fun = function(x) style_number(x, digits = 3)) %>%
   add_significance_stars()
 
 combined_table <- tbl_merge(
@@ -349,3 +369,5 @@ table_regs_a <- stargazer(reg_comm_areas_a, reg_districts_a,
           df = FALSE,
           add.lines = fe_lines)
 ```
+
+
