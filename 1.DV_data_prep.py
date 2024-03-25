@@ -184,6 +184,7 @@ def add_comm_area_district(df):
 
 def gen_base_df_all_combos(areas="community_area"):
     """Generate all possible combinations of geographic area, month, and crime type.
+    This will be used to ensure a balanced panel with 0 crime counts where needed.
     
     Keyword argument:
     ----------------
@@ -310,34 +311,34 @@ def gen_full_df(base_df, area="community_area", start = 2001, end = 2023):
 
 
 # PART 2: FUNCTION EXECUTION
+if __name__ == "__main__":
+    IUCR_DICT = load_process_iucr_codes()
 
-IUCR_DICT = load_process_iucr_codes()
+    community_areas = unzip_load_shapefile("Boundaries - Community Areas (current).zip", 
+                                        "community area boundaries", 
+                                        "geo_export_75cc0f3f-cd68-496a-bbb6-489e8c562a16.shp")
 
-community_areas = unzip_load_shapefile("Boundaries - Community Areas (current).zip", 
-                                       "community area boundaries", 
-                                       "geo_export_75cc0f3f-cd68-496a-bbb6-489e8c562a16.shp")
+    police_districts = unzip_load_shapefile("Police_District_Boundary_View-shp.zip", 
+                                            "police district boundaries", 
+                                            "Police_District_Boundary_View.shp")
 
-police_districts = unzip_load_shapefile("Police_District_Boundary_View-shp.zip", 
-                                        "police district boundaries", 
-                                        "Police_District_Boundary_View.shp")
+    crime_month_comm_area_combos = gen_base_df_all_combos()  
+    crime_month_district_combos = gen_base_df_all_combos(areas="district")
 
-crime_month_comm_area_combos = gen_base_df_all_combos()  
-crime_month_district_combos = gen_base_df_all_combos(areas="district")
+    # create community area level dataframes
+    full_df = gen_full_df(base_df=crime_month_comm_area_combos)
+    full_df_annual = full_df.groupby(["reg_crime_group", 
+                                    "community_area", 
+                                    "year"])["n_reported"].sum().reset_index()
 
-# create community area level dataframes
-full_df = gen_full_df(base_df=crime_month_comm_area_combos)
-full_df_annual = full_df.groupby(["reg_crime_group", 
-                                  "community_area", 
-                                  "year"])["n_reported"].sum().reset_index()
+    # create police district area level dataframes
+    full_df_district = gen_full_df(base_df=crime_month_district_combos, area="district")
+    full_df_district_annual = full_df_district.groupby(["reg_crime_group",
+                                                        "district",
+                                                        "year"])["n_reported"].sum().reset_index()
 
-# create police district area level dataframes
-full_df_district = gen_full_df(base_df=crime_month_district_combos, area="district")
-full_df_district_annual = full_df_district.groupby(["reg_crime_group",
-                                                    "district",
-                                                    "year"])["n_reported"].sum().reset_index()
-
-# save to csv for analysis in R
-full_df.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "monthly_comm_area_2001_2023.csv"))
-full_df_annual.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "annual_comm_area_2001_2023.csv"))
-full_df_district.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "monthly_district_2001_2023.csv"))
-full_df_district_annual.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "annual_district_2001_2023.csv"))
+    # save to csv for analysis in R
+    full_df.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "monthly_comm_area_2001_2023.csv"))
+    full_df_annual.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "annual_comm_area_2001_2023.csv"))
+    full_df_district.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "monthly_district_2001_2023.csv"))
+    full_df_district_annual.to_csv(os.path.join(BASE_PATH, "Data/regression ready aggregations", "annual_district_2001_2023.csv"))
